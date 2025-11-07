@@ -1,0 +1,48 @@
+name: CI - LangIA WhatsApp API
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Clonar repositório
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Configurar JDK
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: maven
+
+      # 3️⃣ Compilar e testar com Maven
+      - name: Build and test with Maven
+        run: mvn -B verify --file pom.xml
+
+      # 4️⃣ Gerar artefatos (opcional)
+      - name: Package JAR
+        run: mvn -B package -DskipTests
+
+      # 5️⃣ Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t fabio2543/langia-wpp:latest .
+
+      # 6️⃣ (Opcional) Push to Docker Hub
+      # Para habilitar, configure DOCKERHUB_USERNAME e DOCKERHUB_TOKEN em GitHub Secrets
+      - name: Push image to Docker Hub
+        if: github.ref == 'refs/heads/main'
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
+          docker push fabio2543/langia-wpp:latest
