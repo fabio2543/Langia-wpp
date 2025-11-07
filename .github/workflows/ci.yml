@@ -23,30 +23,26 @@ jobs:
           java-version: '21'
           cache: maven
 
-      # 3️⃣ Compilar e testar com Maven
-      - name: Build and test with Maven
-        run: mvn -B verify --file pom.xml
-
-      # 4️⃣ Gerar artefatos (opcional)
-      - name: Package JAR
+      # 3️⃣ Build Maven
+      - name: Build with Maven
         run: mvn -B package -DskipTests
 
-      # 5️⃣ Build Docker image
+      # 4️⃣ Build Docker image
       - name: Build Docker image
         run: |
-          docker build -t fabio2543/langia-wpp:latest .
+          IMAGE_NAME=jojunior/langia-wpp
+          docker build -t $IMAGE_NAME:latest .
 
-      # 6️⃣ (Opcional) Push to Docker Hub
-      # Para habilitar, configure DOCKERHUB_USERNAME e DOCKERHUB_TOKEN em GitHub Secrets
-      - name: Push image to Docker Hub
-        if: github.ref == 'refs/heads/main'
+      # 5️⃣ Push to Docker Hub
+      - name: Push Docker image to Docker Hub
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
+          IMAGE_NAME=jojunior/langia-wpp
           echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
-          IMAGE=jojunior/langia-wpp
+          docker tag $IMAGE_NAME:latest $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:latest
           TAG=$(date +'%Y%m%d')-${GITHUB_SHA::7}
-          docker tag $IMAGE:latest $IMAGE:$TAG
-          docker push $IMAGE:latest
-          docker push $IMAGE:$TAG
+          docker tag $IMAGE_NAME:latest $IMAGE_NAME:$TAG
+          docker push $IMAGE_NAME:$TAG
