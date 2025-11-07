@@ -1,0 +1,48 @@
+name: langia-dev
+services:
+  pg-dev:
+    image: postgres:15
+    container_name: langia-pg-dev
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME_DEV?err}
+      POSTGRES_USER: ${DB_USER_DEV?err}
+      POSTGRES_PASSWORD: ${DB_PASS_DEV?err}
+    ports:
+      - "${DB_PORT_DEV:-5433}:5432"
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER_DEV} -d ${DB_NAME_DEV}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${DOCKER_IMAGE_DEV:-jojunior/langia-wpp:dev-local}
+    container_name: langia-api-dev
+    restart: always
+    depends_on:
+      pg-dev:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: ${API_PORT_DEV:-8081}
+      WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN_DEV?err}
+      WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET_DEV?err}
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://pg-dev:5432/${DB_NAME_DEV}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER_DEV}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASS_DEV}
+    ports:
+      - "${API_PORT_DEV:-8081}:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata_dev:

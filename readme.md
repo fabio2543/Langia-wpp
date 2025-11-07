@@ -169,14 +169,77 @@ LIMIT 5;
 | H1.3 – Callback de Entrega | Atualizar status de entrega e leitura (DELIVERED, READ). |
 | V2 – Auditoria | Criar colunas `created_at`, `updated_at` e índices. |
 
+
 ---
 
 ## 🧰 Repositório e Autoria
 
 **Autor:** José Fábio Júnior  
 **Projeto:** LangIA (2025)  
-**Repositório:** [https://github.com/fabio2543/langia-api](https://github.com/fabio2543/langia-api)
+**Repositório:** [https://github.com/fabio2543/langia-wpp](https://github.com/fabio2543/langia-wpp)
 
 ---
 
 > _Sprint 1 entregue com sucesso – módulo de recepção de mensagens WhatsApp validado, seguro e integrado ao pipeline do LangIA._
+
+⚙️ 1. Subir o ambiente completo (API + Banco)
+docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build
+
+
+🔹 Esse comando:
+
+Constrói a imagem do Spring Boot (compila o JAR localmente).
+
+Cria os containers:
+
+langia-pg-dev → banco PostgreSQL
+
+langia-api-dev → aplicação Spring Boot
+
+Usa as variáveis definidas no arquivo .env.dev.
+
+🔍 2. Verificar se os containers estão rodando
+docker ps
+
+
+Exemplo esperado:
+
+NAME             STATUS                    PORTS
+langia-api-dev   Up (healthy)              0.0.0.0:8081->8080/tcp
+langia-pg-dev    Up (healthy)              0.0.0.0:5433->5432/tcp
+
+
+🧾 4. Ver logs da aplicação
+docker compose -f docker-compose.dev.yml --env-file .env.dev logs -f api-dev
+
+🧠 5. Acessar o container manualmente (debug opcional)
+docker exec -it langia-api-dev /bin/bash
+
+
+Dentro do container, é possível rodar o app manualmente:
+
+java -jar /app/langia-api.jar
+
+🔁 6. Rebuild rápido da aplicação (sem recriar tudo)
+
+Após alterações no código:
+
+./mvnw clean package -DskipTests
+docker compose -f docker-compose.dev.yml build api-dev
+docker compose -f docker-compose.dev.yml up -d api-dev
+
+🧹 7. Zerar o ambiente de desenvolvimento
+
+Parar e remover containers (mantém o banco):
+
+docker compose -f docker-compose.dev.yml --env-file .env.dev down
+
+
+Apagar tudo, incluindo o banco (volume):
+
+docker compose -f docker-compose.dev.yml --env-file .env.dev down -v
+
+
+Reiniciar do zero:
+
+docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build

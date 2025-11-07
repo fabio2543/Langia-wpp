@@ -1,45 +1,68 @@
 services:
-  # === Banco de Dados ===
-  db:
-    image: postgres:16
-    container_name: langia-pg
+  pg-dev:
+    image: postgres:15
+    container_name: langia-pg-dev
     restart: always
     environment:
-      POSTGRES_USER: langia
-      POSTGRES_PASSWORD: langia
-      POSTGRES_DB: langia
+      POSTGRES_DB: ${DB_NAME_DEV}
+      POSTGRES_USER: ${DB_USER_DEV}
+      POSTGRES_PASSWORD: ${DB_PASS_DEV}
     ports:
-      - "5432:5432"
+      - "${DB_PORT_DEV:-5433}:5432"
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER_DEV} -d ${DB_NAME_DEV}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    profiles: ["dev"]
 
-
-  # === API LangIA (Spring Boot) ===
-  api:
-    build: .
-    container_name: langia-api
+  api-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${DOCKER_IMAGE_DEV:-jojunior/langia-wpp:dev-local}
+    container_name: langia-api-dev
     restart: always
     depends_on:
-      - db
-    ports:
-      - "8080:8080"
-      - "5005:5005"         # 🔥 porta do debug remoto
+      pg-dev:
+        condition: service_healthy
     environment:
-      SERVER_PORT: "8080"
-      WHATSAPP_VERIFY_TOKEN: dev-verify
-      WHATSAPP_APP_SECRET: dev-secret
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/langia
-      SPRING_DATASOURCE_USERNAME: langia
-      SPRING_DATASOURCE_PASSWORD: langia
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_SQL_INIT_MODE: never
+      SERVER_PORT: ${API_PORT_DEV:-8081}
+      WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN_DEV}
+      WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET_DEV}
       SPRING_PROFILES_ACTIVE: dev
-      JAVA_TOOL_OPTIONS: >
-        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
-    # se seu pom já gera o jar em target/, use isso:
-    command: ["java","-jar","/app/langia-api-0.0.1-SNAPSHOT.jar"]
-    volumes:
-      - ./target/langia-api-0.0.1-SNAPSHOT.jar:/app/langia-api-0.0.1-SNAPSHOT.jar
+      SPRING_DATASOURCE_URL: jdbc:postgresql://pg-dev:5432/${DB_NAME_DEV}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER_DEV}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASS_DEV}
+    ports:
+      - "${API_PORT_DEV:-8081}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    profiles: ["dev"]
+
+  # Em PROD, idealmente não rodar Postgres no compose. Use Cloud SQL.
+  api-prod:
+    image: ${DOCKER_IMAGE_PROD:-jojunior/langia-wpp:latest}
+    container_name: langia-api-prod
+    restart: always
+    environment:
+      SERVER_PORT: ${API_PORT_PROD:-8080}
+      WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN_PROD}
+      WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET_PROD}
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: ${DB_URL_PROD}      # ex: jdbc:postgresql://<cloudsql-host>:5432/langia
+      SPRING_DATASOURCE_USERNAME: ${DB_USER_PROD}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASS_PROD}
+    ports:
+      - "${API_PORT_PROD:-8080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+    profiles: ["prod"]
 
 volumes:
-  pg_data:
+  pgdata_dev:

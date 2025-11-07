@@ -1,5 +1,5 @@
 server:
-  port: 8082
+  port: 8081
 management:
   endpoints:
     web:
@@ -7,5 +7,10 @@ management:
         include: health,info
 
 whatsapp:
-  verify-token: ${whatsapp.verify-token}
-  app-secret: ${whatsapp.app-secret}
+  verify-token: ${WHATSAPP_VERIFY_TOKEN:}
+  app-secret: ${WHATSAPP_APP_SECRET_DEV:}
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
