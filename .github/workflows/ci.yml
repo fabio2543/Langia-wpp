@@ -45,4 +45,8 @@ jobs:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
-          docker push fabio2543/langia-wpp:latest
+          IMAGE=jojunior/langia-wpp
+          TAG=$(date +'%Y%m%d')-${GITHUB_SHA::7}
+          docker tag $IMAGE:latest $IMAGE:$TAG
+          docker push $IMAGE:latest
+          docker push $IMAGE:$TAG
