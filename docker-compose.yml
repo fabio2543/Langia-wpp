@@ -1,0 +1,45 @@
+services:
+  # === Banco de Dados ===
+  db:
+    image: postgres:16
+    container_name: langia-pg
+    restart: always
+    environment:
+      POSTGRES_USER: langia
+      POSTGRES_PASSWORD: langia
+      POSTGRES_DB: langia
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+
+  # === API LangIA (Spring Boot) ===
+  api:
+    build: .
+    container_name: langia-api
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+      - "5005:5005"         # 🔥 porta do debug remoto
+    environment:
+      SERVER_PORT: "8080"
+      WHATSAPP_VERIFY_TOKEN: dev-verify
+      WHATSAPP_APP_SECRET: dev-secret
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/langia
+      SPRING_DATASOURCE_USERNAME: langia
+      SPRING_DATASOURCE_PASSWORD: langia
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_SQL_INIT_MODE: never
+      SPRING_PROFILES_ACTIVE: dev
+      JAVA_TOOL_OPTIONS: >
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+    # se seu pom já gera o jar em target/, use isso:
+    command: ["java","-jar","/app/langia-api-0.0.1-SNAPSHOT.jar"]
+    volumes:
+      - ./target/langia-api-0.0.1-SNAPSHOT.jar:/app/langia-api-0.0.1-SNAPSHOT.jar
+
+volumes:
+  pg_data:

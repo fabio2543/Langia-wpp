@@ -1,0 +1,14 @@
+# Maven
+target/
+*.log
+
+# Docker
+*.env
+*.pid
+
+# IDEs
+.idea/
+.vscode/
+
+# Sistema
+.DS_Store
