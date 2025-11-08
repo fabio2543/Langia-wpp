@@ -17,7 +17,7 @@ public class SignatureVerifier {
 
     private static final Logger log = LoggerFactory.getLogger(SignatureVerifier.class);
 
-    @Value("${whatsapp.app-secret}")
+    @Value("${whatsapp.app-secret:}")
     private String appSecret;
 
     public boolean isValid(String signatureHeader, byte[] body) {

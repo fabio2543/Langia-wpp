@@ -1,16 +1,36 @@
 server:
   port: 8081
+  address: 0.0.0.0
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  main:
+    web-application-type: servlet
+
 management:
   endpoints:
     web:
       exposure:
         include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.langia: DEBUG
 
 whatsapp:
-  verify-token: ${WHATSAPP_VERIFY_TOKEN:}
-  app-secret: ${WHATSAPP_APP_SECRET_DEV:}
-
-spring:
-  jpa:
-    hibernate:
-      ddl-auto: update
+  verify-token: ${WHATSAPP_VERIFY_TOKEN}
+  phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID}
+  token: ${WHATSAPP_TOKEN}
+  app-secret: ${WHATSAPP_APP_SECRET}

@@ -1,48 +1,44 @@
-name: langia-dev
 services:
-  pg-dev:
+  langia-pg-dev:
     image: postgres:15
     container_name: langia-pg-dev
-    restart: always
     environment:
-      POSTGRES_DB: ${DB_NAME_DEV?err}
-      POSTGRES_USER: ${DB_USER_DEV?err}
-      POSTGRES_PASSWORD: ${DB_PASS_DEV?err}
+      POSTGRES_DB: ${DB_NAME_DEV}
+      POSTGRES_USER: ${DB_USER_DEV}
+      POSTGRES_PASSWORD: ${DB_PASS_DEV}
     ports:
-      - "${DB_PORT_DEV:-5433}:5432"
-    volumes:
-      - pgdata_dev:/var/lib/postgresql/data
+      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER_DEV} -d ${DB_NAME_DEV}"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
       retries: 10
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
 
-  api-dev:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: ${DOCKER_IMAGE_DEV:-jojunior/langia-wpp:dev-local}
+  langia-api-dev:
+    build: .
     container_name: langia-api-dev
-    restart: always
+    env_file:
+      - .env.dev
     depends_on:
-      pg-dev:
+      langia-pg-dev:
         condition: service_healthy
+    ports:
+      - "8081:8081"
     environment:
-      SERVER_PORT: ${API_PORT_DEV:-8081}
-      WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN_DEV?err}
-      WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET_DEV?err}
       SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:postgresql://pg-dev:5432/${DB_NAME_DEV}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://langia-pg-dev:5432/${DB_NAME_DEV}
       SPRING_DATASOURCE_USERNAME: ${DB_USER_DEV}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASS_DEV}
-    ports:
-      - "${API_PORT_DEV:-8081}:8081"
+      WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID}
+      WHATSAPP_TOKEN: ${WHATSAPP_TOKEN}
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/ping >/dev/null || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 5
 
 volumes:
   pgdata_dev:

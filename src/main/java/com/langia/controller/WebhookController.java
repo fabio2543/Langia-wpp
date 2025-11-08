@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 @RequestMapping("/webhooks/whatsapp")
 public class WebhookController {
 
-    @Value("${whatsapp.verify-token:dev-verify}")
+     @Value("${whatsapp.verify-token}")
     private String verifyToken;
 
     private final SignatureVerifier verifier;
